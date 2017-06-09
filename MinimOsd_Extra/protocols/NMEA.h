@@ -217,8 +217,15 @@ $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A
 
 10    003.1,W – Магнитные вариации
 
-
-
+          Time         Lat         N/S         Lon          E/W          Fix     #Sat    Hdop      Alt     Unit    Geoid  Unit  ...  *CS
+ ---0--|----1-------|----2------|----3------|----4-------|----5-------|----6---|---7---|---8----|--9-----|--10---|-11----|12-|13|-14--|-
+ $GPGGA, 123519     , 4807.038  , N / S     , 01131.000  , E / W      , 1      , 08    , 0.9    , 545.4  , M     , 46.9  , M ,  , *47
+ $GPGGA, 002153.000 , 3342.6618 , S / N     , 11751.3858 , W / W      , 1      , 10    , 1.2    , 27.0   , M     , -34.2 , M ,  , 0000 *5E
+ -- 0 -|--- 1 ------|--- 2 -----|--- 3 -----|--- 4 ------|--- 5 ------|--- 6 --|-- 7 --|-- 8 ---|--9-----|--10---|-11----|12-|13|-14--|-
+ $GPRMC, 123519     , A         , 4807.038  , S / N      , 01131.000  , E / W  , 022.4 , 084.4  , 230394 , 003.1 , W *6A
+ $GPRMC, 161229.487 , A         , 3723.2475 , N / S      , 12158.3416 , W / E  , 0.13  , 309.62 , 120598 ,       , *10
+ ---0--|----1-------|----2------|----3------|----4-------|----5-------|----6---|---7---|---8----|--9-----|--10---|-11----|12-|13|-14--|-
+          Time         Status      Lat         N/S          Lon          E/W     Speed   Course    Date     M.V  ...  *CS
 
 store to msg.nmea.lat
 
@@ -316,6 +323,7 @@ store to msg.nmea.lat
 
 
 void read_NMEA(){
+    char string[NMEA_BUF_LENGTH];
     while (Serial.available_S()) {
             uint8_t c = Serial.read_S();
                 
@@ -323,7 +331,7 @@ void read_NMEA(){
             bytes_comes+=1;
 #endif
             // parse data to msg
-            if (parse_NMEA_char(c, &msg.string[0])) {
+            if (parse_NMEA_char(c, &string[0])) {
                 set_data_got();
             }
     }
@@ -466,6 +474,12 @@ void GPS_NewData() {
 }
 
 
+void GPS_calc_longitude_scaling(int32_t lat) {
+  float rads       = (abs((float)lat) / 10000000.0) * 0.0174532925;
+  GPS_scaleLonDown = cos(rads);
+}
+
+
 void GPS_reset_home_position() {
   if (msg.nmea.fix && msg.nmea.sats >= MINSATFIX) {
       GPS_home[LAT] = msg.nmea.lat;
@@ -474,12 +488,6 @@ void GPS_reset_home_position() {
       GPS_calc_longitude_scaling(msg.nmea.lat);  //need an initial value for distance and bearing calc
       msg.nmea.fix_HOME = 1;
   }
-}
-
-
-void GPS_calc_longitude_scaling(int32_t lat) {
-  float rads       = (abs((float)lat) / 10000000.0) * 0.0174532925;
-  GPS_scaleLonDown = cos(rads);
 }
 
 
